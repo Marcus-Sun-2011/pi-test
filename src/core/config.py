@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     api_key: str = "lm-studio"  # Default value for LM Studio if not provided in .env
     model_name: str = "local-model"
     temperature: float = 0.7
-    max_tokens: int = 1024
+    max_tokens: int = 16384
 
     # Agent logic
     max_iterations: int = 10

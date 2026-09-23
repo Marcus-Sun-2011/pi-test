@@ -134,7 +134,11 @@ local_agent_studio/
 ## 开发路线图
 - **Phase 2**: 项目骨架建立与基础 ModelClient 对话实现。
 - **Phase 3**: 工具注册系统构建与简单 File Read 工具开发。
-- **Phase 4**: 实现核心 Agent Loop 与工具自动调用逻辑。
-- **Phase 5**: 加入安全防护机制（用户确认、路径沙箱）。
+- **Phase 4: Agent Loop & Tool Calling Optimization (Current)**
+    - [ ] **System Prompt Engineering**: Refine the system instructions to ensure the model recognizes and utilizes tools correctly.
+    - [ ] **Multi-turn Reasoning**: Implement support for complex, multi-step task chains (e.g., \"list files then read a specific one\").
+    - [ ] **Error Handling & Feedback Loop**: Improve how tool execution errors are communicated back to the model for self-correction.
+    - [ ] **TDD Integration**: Ensure all core flows are validated via automated integration tests before finalizing features.
+- **Phase 5**: 安全防护机制（用户确认、路径沙箱）。
 - **Phase 6**: 日志完善、异常处理增强及集成测试覆盖。
 - **Phase 7**: 文档生成与案例展示。

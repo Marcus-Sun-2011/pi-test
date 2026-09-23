@@ -52,3 +52,12 @@ class ToolRegistry:
 
 # Global registry instance
 registry = ToolRegistry()
+
+# Auto-discover and import all tool implementations so they register themselves
+import importlib
+import pkgutil
+import src.tools.implementations
+
+for _, module_name, _ in pkgutil.walk_packages(src.tools.implementations.__path__, src.tools.implementations.__name__ + "."):
+    importlib.import_module(module_name)
+

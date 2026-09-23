@@ -1,5 +1,6 @@
 from typing import List, Dict, Any
 import os
+from pydantic import BaseModel, Field
 from src.tools.base import BaseTool
 from src.core.workspace import workspace_manager
 from src.utils.logger import logger
@@ -9,17 +10,27 @@ class FileReadTool(BaseTool):
     description = "Reads the content of a file from the workspace."
     
     # Define Pydantic model for input validation
-    from pydantic import BaseModel, Field
     class ToolInput(BaseModel):
         path: str = Field(..., description="The path to the file relative to the workspace root.")
 
     input_schema = ToolInput
 
+    def _run(self, args: Dict[str, Any]) -> str:
+        file_path = args.get("path")
+        # Security Check: Ensure path is within workspace
+        full_path = workspace_manager.get_safe_path(file_path)
+
+        try:
+            with open(full_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return content
+        except Exception as e:
+            return f"Error reading file: {str(e)}"
+
 class ListFilesTool(BaseTool):
     name = "list_files"
     description = "Lists the files in a directory within the workspace."
     
-    from pydantic import BaseModel, Field
     class ToolInput(BaseModel):
         path: str = Field(..., description="The path to the directory (defaulting to root if empty) relative to the workspace.")
 
@@ -37,10 +48,10 @@ class ListFilesTool(BaseTool):
             return f"Error listing directory: {str(e)}"
 
 class WriteFileTool(BaseTool):
+
     name = "write_file"
     description = "Creates or overwrites a file with the provided content in the workspace."
     
-    from pydantic import BaseModel, Field
     class ToolInput(BaseModel):
         path: str = Field(..., description="The path to the file relative to the workspace root.")
         content: str = Field(..., description="The text content to write into the file.")

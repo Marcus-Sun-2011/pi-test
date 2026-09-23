@@ -1,14 +1,17 @@
 # Project Progress Tracker - Local Agent Studio
 
 ## Current Status
-- **Current Phase**: Phase 3 (Tools Registry & Initial Tools)
-- **Overall Completion**: ~25%
+- **Current Phase**: Phase 6 (Testing & Error Handling / Polish)
+- **Overall Completion**: ~85%
 
 ## Completed Milestones
 - [x] **Phase 0**: Requirements Clarification & Technology Selection.
 - [x] **Phase 1**: Project Architecture and Interface Design.
-- [x] **Phase 2**: LM Studio Connection & Minimal Conversation (Core logic implemented).
-- [ ] **Phase 3**: Tool Registration System (In Progress).
+- [x] **Phase 2**: LM Studio Connection & Minimal Conversation.
+- [x] **Phase 3**: Tool Registration System & File Tools (`read_file`, `list_files`, `write_file`).
+- [x] **Phase 4**: Agent Loop & Tool Calling (`AgentEngine`, multi-turn reasoning, tool execution).
+- [x] **Phase 5**: Security Measures & Workspace Sandboxing (`WorkspaceManager`, `SecurityGuard`).
+- [x] **Phase 6**: Unit Testing & Error Feedback Loop (`pytest` unit test suites for core components and agent engine).
 
 ## Detailed Progress per Phase
 
@@ -33,22 +36,22 @@
 - [x] `BaseTool` abstract class defined in `src/tools/base.py`.
 - [x] `ToolRegistry` implementation finished in `src/tools/registry.py`.
 - [x] `WorkspaceManager` security boundary implemented in `src/core/workspace.py`.
-- [x] First tool `read_file` implemented with safety checks.
+- [x] Tools implemented (`read_file`, `list_files`, `write_file`, `web_search`, `get_current_time`).
 
-### Phase 4: Agent Loop and Tool Calling (Next)
-- [ ] Implement `AgentEngine` core loop.
-- [ ] Parse Model's `tool_calls` response.
-- [ ] Integrate tool execution into the chat flow.
-- [ ] Handle multi-turn context updates correctly.
+### Phase 4: Agent Loop and Tool Calling
+- [x] Implement `AgentEngine` core loop.
+- [x] Parse Model's `tool_calls` response.
+- [x] Integrate tool execution into the chat flow.
+- [x] Handle multi-turn context updates correctly.
 
-### Phase 5: Security Measures and User Confirmation (Next)
-- [ ] Implement `UserConfirmation` prompt for high-risk actions.
-- [ ] Refine workspace restrictions.
+### Phase 5: Security Measures and User Confirmation
+- [x] Implement `UserConfirmation` prompt for high-risk actions (`SecurityGuard`).
+- [x] Refine workspace restrictions (`WorkspaceManager`).
 
-### Phase 6: Testing, Logging, and Error Handling (Next)
-- [ ] Add comprehensive logging with `loguru`.
-- [ ] Implement unit tests for tools.
-- [ ] Integration tests for the full agent loop.
+### Phase 6: Testing, Logging, and Error Handling
+- [x] Add comprehensive logging with `loguru`.
+- [x] Implement unit tests for core components and agent engine (`tests/unit/`).
+- [ ] Integration tests for the full agent loop (requires active LM Studio server).
 
 ### Phase 7: Documentation and Final Polish (Next)
 - [ ] Generate user manual.
