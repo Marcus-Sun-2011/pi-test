@@ -7,6 +7,14 @@ class ToolInput(BaseModel):
     """Base class for tool inputs."""
     pass
 
+class SkillDefinition:
+    """Base class for skills (logical groupings of related tools)."""
+    name: str = ""
+    description: str = ""
+
+    def __init__(self):
+        pass
+
 class BaseTool:
     name: str = ""
     description: str = ""

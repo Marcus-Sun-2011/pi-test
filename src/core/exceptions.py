@@ -3,7 +3,7 @@ from loguru import logger
 
 # Custom Exception classes for granular error handling
 class AgentError(Exception):
-    """Base exception for all agent-related errors."""
+    """Base error for all agent-related issues."""
     pass
 
 class ConnectionError(AgentError):
@@ -12,6 +12,12 @@ class ConnectionError(AgentError):
 
 class ToolExecutionError(AgentError):
     """Raised when a specific tool (e.g., file_read) encounters an error during execution."""
+    def __init__(self, message: str, original_exception: Optional[Exception] = None):
+        super().__init__(message)
+        self.original_exception = original_exception
+
+class SecurityBlockError(ToolExecutionError):
+    """Raised when an action is explicitly blocked by the SafetyGuard."""
     pass
 
 class ValidationError(AgentError):

@@ -13,8 +13,12 @@ class GetCurrentTimeTool(BaseTool):
     input_schema = ToolInput
 
     def _run(self, args: Dict[str, Any]) -> str:
-        now = datetime.datetime.now()
-        return now.strftime("%Y-%m-%d %H:%M:%S (%A)")
+        try:
+            now = datetime.datetime.now()
+            return now.strftime("%Y-%m-%d %H:%M:%S (%A)")
+        except Exception as e:
+            # Provide a fallback or descriptive error if system time is inaccessible
+            return f"Error retrieving current time: {str(e)}"
 
 from src.tools.registry import registry
 registry.register(GetCurrentTimeTool())

@@ -1,80 +1,72 @@
-from typing import List, Dict, Any
-import os
-from pydantic import BaseModel, Field
 from src.tools.base import BaseTool
-from src.core.workspace import workspace_manager
-from src.utils.logger import logger
+from typing import Dict, Any
+from src.core.security import guard
+import os
+from src.core.exceptions import ToolExecutionError, ValidationError
 
 class FileReadTool(BaseTool):
-    name = "read_file"
-    description = "Reads the content of a file from the workspace."
-    
-    # Define Pydantic model for input validation
-    class ToolInput(BaseModel):
-        path: str = Field(..., description="The path to the file relative to the workspace root.")
+    def __init__(self):
+        pass
 
-    input_schema = ToolInput
-
-    def _run(self, args: Dict[str, Any]) -> str:
-        file_path = args.get("path")
-        # Security Check: Ensure path is within workspace
-        full_path = workspace_manager.get_safe_path(file_path)
-
+    def _run(self, args: Dict[str, Any]) -> Any:
+        path_raw = args.get("path")
+        if not path_raw:
+            raise ValidationError("FileReadTool requires a 'path' argument.")
+        
+        # Safety Check: Ensure the requested path is within our workspace
         try:
-            with open(full_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            return content
+            path = guard.validate_path(path_raw)
         except Exception as e:
-            return f"Error reading file: {str(e)}"
+            # Re-raise as ToolExecutionError to be caught by engine's error handler
+            raise ToolExecutionError(f"Security/Path Error: {str(e)}")
+        
+        try:
+            with open(str(path), 'r', encoding='utf-8') as f:
+                return f.read()
+        except FileNotFoundError:
+            raise ToolExecutionError(f"File not found at path: {path}")
+        except Exception as e:
+            raise ToolExecutionError(f"Failed to read file: {str(e)}")
 
 class ListFilesTool(BaseTool):
-    name = "list_files"
-    description = "Lists the files in a directory within the workspace."
-    
-    class ToolInput(BaseModel):
-        path: str = Field(..., description="The path to the directory (defaulting to root if empty) relative to the workspace.")
+    def __init__(self):
+        pass
 
-    input_schema = ToolInput
-
-    def _run(self, args: Dict[str, Any]) -> str:
-        dir_path = args.get("path", ".")
-        # Security Check: Ensure path is within workspace
-        full_path = workspace_manager.get_safe_path(dir_path)
-
+    def _run(self, args: Dict[str, Any]) -> Any:
+        path_raw = args.get("path", ".")
+        if not path_raw:
+            raise ValidationError("ListFilesTool requires a 'path' argument.")
+            
+        # Safety Check: Ensure the requested path is within our workspace
         try:
-            files = os.listdir(full_path)
-            return "\n".join(files) if files else "Directory is empty."
+            path = guard.validate_path(path_raw)
         except Exception as e:
-            return f"Error listing directory: {str(e)}"
+            raise ToolExecutionError(f"Security/Path Error: {str(e)}")
+        
+        try:
+            return os.listdir(str(path))
+        except Exception as e:
+            raise ToolExecutionError(f"Failed to list directory at {path}: {str(e)}")
 
 class WriteFileTool(BaseTool):
+    def __init__(self):
+        pass
 
-    name = "write_file"
-    description = "Creates or overwrites a file with the provided content in the workspace."
-    
-    class ToolInput(BaseModel):
-        path: str = Field(..., description="The path to the file relative to the workspace root.")
-        content: str = Field(..., description="The text content to write into the file.")
-
-    input_schema = ToolInput
-
-    def _run(self, args: Dict[str, Any]) -> str:
-        file_path = args.get("path")
-        content = args.get("content")
-        if not file_path or content is None:
-            raise ValueError("Both 'path' and 'content' are required.")
-
-        # Security Check: Ensure path is within workspace
-        full_path = workspace_manager.get_safe_path(file_path)
-
+    def _run(self, args: Dict[str, Any]) -> Any:
+        path_raw = args.get("path")
+        if not path_raw:
+            raise ValidationError("WriteFileTool requires a 'path' argument.")
+        
+        # Safety Check: Ensure the requested path is within our workspace
         try:
-            with open(full_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            return f"Successfully wrote to {file_path}"
+            path = guard.validate_path(path_raw)
         except Exception as e:
-            return f"Error writing file: {str(e)}"
-
-from src.tools.registry import registry
-registry.register(FileReadTool())
-registry.register(ListFilesTool())
-registry.register(WriteFileTool())
+            raise ToolExecutionError(f"Security/Path Error: {str(e)}")
+        
+        content = args.get("content", "")
+        try:
+            with open(str(path), 'w', encoding='utf-8') as f:
+                f.write(content)
+            return "Success"
+        except Exception as e:
+            raise ToolExecutionError(f"Failed to write file at {path}: {str(e)}")

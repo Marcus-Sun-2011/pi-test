@@ -131,6 +131,15 @@ local_agent_studio/
 
 ---
 
+## Communication Protocol (Agent Interaction)
+To ensure smooth collaboration, the following protocol is established:
+1. **Key Milestone Reporting**: Notify when completing core tasks (e.g., bug fixes, test
+completion, moving to new sub-tasks).
+2. **Blocker Reporting**: Proactively report technical hurdles or ambiguous errors for guidance.
+3. **Heartbeat Status**: Provide status updates during long processes or deep thinking phases.
+
+---
+
 ## 开发路线图
 - **Phase 2**: 项目骨架建立与基础 ModelClient 对话实现。
 - **Phase 3**: 工具注册系统构建与简单 File Read 工具开发。

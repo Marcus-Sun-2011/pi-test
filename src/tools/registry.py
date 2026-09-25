@@ -1,5 +1,5 @@
-from typing import Dict, List, Type
-from src.tools.base import BaseTool
+from typing import Dict, List, Type, Union
+from src.tools.base import BaseTool, SkillDefinition
 
 class ToolRegistry:
     def __init__(self):
@@ -49,9 +49,64 @@ class ToolRegistry:
             })
         return tools_info
 
+class SkillRegistry:
+    def __init__(self):
+        # Maps skill name -> SkillDefinition instance
+        self._skills: Dict[str, SkillDefinition] = {}
+
+    def register(self, skill_instance: SkillDefinition):
+        """Registers a new skill by its name."""
+        if not skill_instance.name:
+            raise ValueError("Skill must have a name.")
+        if skill_instance.name in self._skills:
+            raise ValueError(f"Skill with name '{skill_instance.name}' is already registered.")
+        self._skills[skill_instance.name] = skill_instance
+
+    def get_all_skills(self) -> List[SkillDefinition]:
+        """Returns a list of all registered skills."""
+        return list(self._skills.values())
+
+    def get_skill(self, name: str) -> SkillDefinition:
+        """Gets a specific skill by name."""
+        if name not in self._skills:
+            raise ValueError(f"Skill '{name}' not found.")
+        return self._skills[name]
+
+    def get_skills_info(self) -> list:
+        """Returns a representation of all skills for the LLM prompt."""
+        skills_info = []
+        for skill in self.get_all_skills():
+            # A Skill is presented to the LLM as a "capability" 
+            # It contains its own description and a set of tools it encompasses.
+            skills_info.append({
+                "type": "function",
+                "function": {
+                    "name": skill.name,
+                    "description": skill.description,
+                    "parameters": {
+                        "type": "object",
+                        "properties": {}, # Skills don't have direct params usually, or they are nested. 
+                                         # In our current architecture, skills wrap tools.
+                        "required": []
+                    }
+                }
+            })
+        return skills_info
+
+def get_all_capabilities() -> list:
+    """Combines both tools and skills into a single list of capabilities for the LLM."""
+    # We include tools as individual actions and skills as capability clusters.
+    # The model can choose either based on its context.
+    tools = tool_registry.get_tools_info()
+    skills = skill_registry.get_skills_info()
+    return tools + skills
 
 # Global registry instance
-registry = ToolRegistry()
+tool_registry = ToolRegistry()
+skill_registry = SkillRegistry()
+
+# Compatibility layer
+registry = tool_registry
 
 # Auto-discover and import all tool implementations so they register themselves
 import importlib
@@ -60,4 +115,3 @@ import src.tools.implementations
 
 for _, module_name, _ in pkgutil.walk_packages(src.tools.implementations.__path__, src.tools.implementations.__name__ + "."):
     importlib.import_module(module_name)
-
