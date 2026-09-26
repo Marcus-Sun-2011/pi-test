@@ -14,20 +14,20 @@ class ModelClient:
         self.model = settings.model_name
 
     def check_health(self) -> bool:
-        import urllib.request
+        """Check connection with the model provider."""
         try:
-            health_url = settings.api_base_url.rstrip("/") + "/models"
-            req = urllib.request.Request(health_url, headers={"Authorization": f"Bearer {settings.api_key}"})
-            with urllib.request.urlopen(req, timeout=1.0) as response:
-                if response.status == 200:
-                    logger.info("Model connection healthy")
-                    return True
-            return False
+            # A simple request to list models is sufficient for checking if the API endpoint is reachable
+            # and authentication works correctly.
+            response = self.client.models.list()
+            logger.info("Model connection healthy")
+            return True
         except Exception as e:
-            logger.error(f"Model connection failed: {e}")
+            logger.error(f"Model health check failed: {e}")
             return False
 
     def chat_completion(self, messages: List[Dict[str, str]], tools: Optional[List[Dict[str, Any]]] = None) -> Dict[str, any]:
+        import time
+        start_time = time.time()
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -36,10 +36,15 @@ class ModelClient:
                 tool_choice="auto" if tools else None,
                 temperature=0.7
             )
+            elapsed = time.time() - start_time
+            # Log metrics for observability (some providers may not return 'usage')
+            usage = response.usage
+            logger.info(f"Chat completion success | Model: {self.model} | Time: {elapsed:.2f}s | Usage: {usage if usage else 'N/A'}")
             return response.choices[0].message
         except Exception as e:
-            logger.error(f"Error during chat completion: {e}")
-            raise ConnectionError(f"Failed to communicate with model at {settings.api_base_url}")
+            # Log the full stack trace for debugging but re-raise a clear message for high-level logic
+            logger.error(f"Chat completion error (Model: {self.model}): {e}", exc_info=True)
+            raise ConnectionError(f"Failed to communicate with model at {settings.api_base_url}. Error: {e}")
 
-# Singleton instance or just a class for now
+# Singleton instance for the application
 client = ModelClient()

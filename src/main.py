@@ -10,6 +10,7 @@ from src.agent.engine import engine
 from src.agent.model_client import client
 from src.tools.registry import registry
 from src.utils.logger import logger
+from src.core.exceptions import ValidationError, SecurityBlockError
 
 app = typer.Typer(help="Local Agent Studio CLI - Connect local LLMs with tools.")
 
@@ -19,9 +20,11 @@ def chat():
     rprint("[bold green]Local Agent Studio Interactive Chat[/bold green]")
     rprint("Type 'exit', 'quit', or press Ctrl+C to exit.\n")
     
-    # Optional health check on start
+    # Enhanced health check on start
     if not client.check_health():
-        rprint("[bold yellow]Warning: Could not connect to LM Studio at http://localhost:1234/v1. Ensure LM Studio is running.[/bold yellow]")
+        rprint("[bold red]Critical Connection Error:[/bold red] Could not connect to LM Studio at http://localhost:1234/v1.")
+        rprint("Please ensure LM Studio is running and the local API server is active.")
+        return
 
     while True:
         try:
@@ -32,15 +35,22 @@ def chat():
                 rprint("[bold blue]Goodbye![/bold blue]")
                 break
             
-            rprint("[dim]Thinking...[/dim]")
+            # Visual feedback for the agent's thinking process
+            rprint("[italic,dim]Agent is processing...[/italic,dim]")
             response = engine.run(user_input)
             rprint(f"\n[bold cyan]Assistant:[/bold cyan] {response}")
         except (KeyboardInterrupt, EOFError):
             rprint("\n[bold blue]Goodbye![/bold blue]")
             break
+        except ValidationError as ve:
+            rprint(f"[bold yellow]Input Warning:[/bold yellow] The request was invalid. Please check your input parameters.")
+            rprint(f"Detail: {ve}")
+        except SecurityBlockError as sbe:
+            rprint(f"[bold red]Security Alert:[/bold red] This specific action is restricted by the safety guard.")
+            rprint(f"Reason: {sbe}")
         except Exception as e:
-            rprint(f"[bold red]Error:[/bold red] {e}")
-            logger.exception("Error in chat loop")
+            rprint(f"[bold red]System Error:[/bold red] {type(e).__name__}: {e}")
+            logger.exception("Unexpected error in main chat loop")
 
 @app.command("health")
 def health():
