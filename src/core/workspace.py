@@ -10,21 +10,28 @@ class WorkspaceManager:
         if not raw_path.startswith(("/", "\\")):
             raw_path = os.path.abspath(raw_path)
         self.base_path = Path(raw_path).resolve()
+        # Automatically create the workspace directory if it doesn't exist
+        self.base_path.mkdir(parents=True, exist_ok=True)
 
     def validate_and_resolve(self, input_path: str) -> Path:
         """
         Strictly validates that the requested path is within the allowed workspace.
-        Prevents directory traversal (e.g., ../../etc/passwd).
+        Prevents directory traversal (e.g., ../../etc/passwd) and prefix-matching bugs.
         """
-        # 1. Convert to absolute and resolve symlinks/relative components
-        requested_path = Path(input_path).resolve()
+        if not input_path:
+            raise SecurityBlockError("Security Violation: Empty path is not allowed.")
 
-        # 2. Check if it's inside the workspace
-        # We check if the base_path is a parent of (or equal to) requested_path
-        if not str(requested_path).startswith(str(self.base_path)):
-            # Extra check for cases where paths might be technically valid but outside our scope
-            if self.base_path != requested_path and self.base_path not in requested_path.parents:
-                raise SecurityBlockError(f"Security Violation: Path '{input_path}' is outside the workspace.")
+        path_obj = Path(input_path)
+        if not path_obj.is_absolute():
+            requested_path = (self.base_path / path_obj).resolve()
+        else:
+            requested_path = path_obj.resolve()
+
+        # Check if requested_path is inside base_path
+        try:
+            requested_path.relative_to(self.base_path)
+        except ValueError:
+            raise SecurityBlockError(f"Security Violation: Path '{input_path}' is outside the workspace sandbox.")
 
         return requested_path
 
@@ -32,6 +39,22 @@ class WorkspaceManager:
         """Returns a string representation of the validated path."""
         validated = self.validate_and_resolve(path_str)
         return str(validated)
+
+    # Compatibility methods
+    def is_safe_path(self, path_str: str) -> bool:
+        """Checks if a path is safe and inside the workspace without raising an error."""
+        try:
+            self.validate_and_resolve(path_str)
+            return True
+        except (SecurityBlockError, Exception):
+            return False
+
+    def get_safe_path(self, path_str: str) -> Path:
+        """Returns the safe path or raises PermissionError/SecurityBlockError."""
+        try:
+            return self.validate_and_resolve(path_str)
+        except SecurityBlockError as e:
+            raise PermissionError(str(e))
 
 # Global instance for tools to use
 workspace_manager = WorkspaceManager()
