@@ -43,28 +43,29 @@ class TestAgentEngine(unittest.TestCase):
         self.assertEqual(mock_client.chat_completion.call_count, 2)
 
     @patch("src.agent.engine.client")
-    def test_agent_multi_turn_chained_dependency(self, mock_client):
-        # Test Case: A task requiring a sequence of tools across multiple turns.
-        # Turn 1: Model calls list_files
-        # Turn 2: Model sees results and then calls read_file
-        # Turn 3: Model provides the final answer based on the content.
+    def test_agent_error_recovery(self, mock_client):
+        # Scenario: User provides a request that causes a ValidationError (e.g., missing path)
+        # The model should see the error and correct it in the next turn.
 
+        # Turn 1: Model attempts to read 'missing_file' which triggers an error
         res1 = MagicMock()
         res1.content = None
-        res1.model_dump.return_value = {"tool_calls": [{"id": "c1", "type": "function", "function": {"name": "list_files", "arguments": '{"path": "."}'}}]}
+        res1.model_dump.return_value = {"tool_calls": [{"id": "c1", "type": "function", "function": {"name": "read_file", "arguments": '{"path": "missing"}'}}]}
 
+        # Turn 2: Model sees the error and tries again with a correct path
         res2 = MagicMock()
         res2.content = None
-        res2.model_dump.return_value = {"tool_calls": [{"id": "c2", "type": "function", "function": {"name": "read_file", "arguments": '{"path": "data.txt"}'}}]}
+        res2.model_dump.return_value = {"tool_calls": [{"id": "c2", "type": "function", "function": {"name": "read_file", "arguments": '{"path": "valid"}'}}]}
 
+        # Turn 3: Success
         res3 = MagicMock()
-        res3.content = "The data is: content_of_data"
+        res3.content = "The data is successfully read."
         res3.model_dump.return_value = {"tool_calls": None}
 
         mock_client.chat_completion.side_effect = [res1, res2, res3]
 
-        response = self.engine.run("List files and read data.txt")
-        self.assertIn("content_of_data", response)
+        response = self.engine.run("Read the file missing then try valid.")
+        self.assertIn("successfully read", response)
         self.assertEqual(mock_client.chat_completion.call_count, 3)
     
     @patch("src.agent.engine.client")

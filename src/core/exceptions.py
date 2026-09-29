@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 from loguru import logger
 
 # Custom Exception classes for granular error handling
@@ -7,14 +7,17 @@ class AgentError(Exception):
     pass
 
 class ConnectionError(AgentError):
-    """Raised when the connection to LM Studio/OpenAI fails."""
+    """Raised when the connection to LM Studio/answer provider fails."""
     pass
 
 class ToolExecutionError(AgentError):
     """Raised when a specific tool (e.g., file_read) encounters an error during execution."""
-    def __init__(self, message: str, original_exception: Optional[Exception] = None):
+    def __init__(self, message: str, original_exception: Optional[Exception] = None, context: Optional[Dict[str, Any]] = None):
         super().__init__(message)
         self.original_exception = original_exception
+        self.context = context or {}
+        if original_exception:
+            logger.error(f"ToolExecutionError: {message} | Error Type: {type(original_exception).__name__} | Context: {self.context}")
 
 class SecurityBlockError(ToolExecutionError):
     """Raised when an action is explicitly blocked by the SafetyGuard."""
@@ -28,9 +31,10 @@ class TimeoutError(AgentError):
     """Raised when the model or a tool takes too long to respond."""
     pass
 
-def log_error(message: str, exception: Optional[Exception] = None):
-    """Helper function to log errors consistently."""
+def log_error(message: str, exception: Optional[Exception] = None, **kwargs):
+    """Helper function to log errors consistently across the system."""
+    context = kwargs if kwargs else {}
     if exception:
-        logger.error(f"{message} | Error: {exception}")
+        logger.error(f"{message} | {type(exception).__name__}: {exception} | Context: {context}")
     else:
-        logger.error(message)
+        logger.error(f"{message} | Context: {context}")
