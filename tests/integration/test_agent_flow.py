@@ -6,6 +6,7 @@ from src.core.config import settings
 from src.utils.logger import logger
 
 def is_lm_studio_available():
+    """Check that LM Studio is reachable AND has a model loaded (its default model)."""
     import socket
     from urllib.parse import urlparse
     parsed = urlparse(settings.api_base_url)
@@ -13,11 +14,22 @@ def is_lm_studio_available():
     port = parsed.port or 1234
     try:
         with socket.create_connection((host, port), timeout=0.5):
-            return True
+            pass
+    except Exception:
+        return False
+    # Reachable — now confirm the server actually reports a loaded (default) model.
+    try:
+        from src.agent.model_client import client as _model_client
+        listed = _model_client.client.models.list()
+        data = getattr(listed, "data", None) or []
+        return len(data) > 0
     except Exception:
         return False
 
-@pytest.mark.skipif(not is_lm_studio_available(), reason="LM Studio server is not running at http://localhost:1234/v1")
+@pytest.mark.skipif(
+    not is_lm_studio_available(),
+    reason="LM Studio server is not reachable, or no model is loaded (default model unavailable)"
+)
 class TestAgentIntegration(unittest.TestCase):
     def test_simple_chat(self):
         """Test a simple greeting to ensure the connection and basic flow work."""

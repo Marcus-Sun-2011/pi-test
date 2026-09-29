@@ -10,8 +10,8 @@ class SecurityGuard:
     def __init__(self):
         # Define tools that require confirmation (high risk)
         # These are actions that could potentially damage the system or data.
-        self.high_risk_tools = ["delete_file", "run_command"] 
-
+        self.high_risk_tools = settings.high_risk_tools
+    
     def validate_path(self, path_str: str) -> Path:
         """
         Validates that a given path is within the allowed workspace.

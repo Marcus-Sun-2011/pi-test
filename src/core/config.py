@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # Agent logic
     max_iterations: int = 10
     workspace_dir: str = "workspace"  # Base directory for all file operations
+    high_risk_tools: list[str] = ["delete_file", "run_command"]
 
     def __post_init__(self):
         """Initialize and validate settings."""
@@ -30,7 +31,7 @@ class Settings(BaseSettings):
         path_obj = Path(raw_path).resolve()
         if not path_obj.exists():
             path_obj.mkdir(parents=True, exist_ok=True)
-
+    
     @property
     def workspace_path(self) -> Path:
         """Return the resolved absolute path of the allowed working directory."""
